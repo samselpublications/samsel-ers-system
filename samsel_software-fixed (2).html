@@ -1697,6 +1697,7 @@ function rOE(el){
   const ao=DB.ay.map(y=>`<option value="${y.id}" ${y.act?'selected':''}>${y.code}</option>`).join('');
   const custItems=DB.cust.filter(c=>c.act).map(c=>({val:c.id,label:c.name,sub:c.code+' · '+(c.type==='School'?'🏫':'🏪')+' '+c.type+(c.city?' · '+c.city:''),icon:c.type==='School'?'🏫':'🏪'}));
   const mgrItems=DB.mgr.filter(m=>m.act).map(m=>({val:m.id,label:m.name,sub:m.code+' · '+m.ph,icon:'👤'}));
+  const schoolItems=DB.cust.filter(c=>c.act&&c.type==='School').map(c=>({val:c.name,label:c.name,sub:c.code+(c.city?' · '+c.city:''),icon:'🏫'}));
   const transportItems=[{val:'TN State Express Transport (SETC)',label:'TN State Express Transport (SETC)',icon:'📦'},{val:'Tamil Nadu State Transport (TNSTC)',label:'Tamil Nadu State Transport (TNSTC)',icon:'📦'},{val:'Parveen Travels Parcel',label:'Parveen Travels Parcel',icon:'📦'},{val:'KPN Parcel Service',label:'KPN Parcel Service',icon:'📦'},{val:'SRS Parcel Service',label:'SRS Parcel Service',icon:'📦'},{val:'VRL Logistics',label:'VRL Logistics',icon:'📦'},{val:'Orange Travels Parcel',label:'Orange Travels Parcel',icon:'📦'},{val:"Kallada Tours & Parcel",label:"Kallada Tours & Parcel",icon:'📦'},{val:'Intercity Bus Parcel',label:'Intercity Bus Parcel',icon:'📦'},{val:'Raj National Express Parcel',label:'Raj National Express Parcel',icon:'📦'},{val:'Thiruvenkatam Travels Parcel',label:'Thiruvenkatam Travels Parcel',icon:'📦'},{val:'Neeta Travels Parcel',label:'Neeta Travels Parcel',icon:'📦'},{val:'Sugam Travels Parcel',label:'Sugam Travels Parcel',icon:'📦'},{val:'Aadinath Parcel Service',label:'Aadinath Parcel Service',icon:'📦'},{val:'DTDC Courier',label:'DTDC Courier',icon:'🚚'},{val:'Blue Dart Express',label:'Blue Dart Express',icon:'🚚'},{val:'Delhivery',label:'Delhivery',icon:'🚚'},{val:'Ekart Logistics',label:'Ekart Logistics',icon:'🚚'},{val:'Xpressbees',label:'Xpressbees',icon:'🚚'},{val:'Shadowfax Courier',label:'Shadowfax Courier',icon:'🚚'},{val:'Professional Courier',label:'Professional Courier',icon:'🚚'},{val:'First Flight Courier',label:'First Flight Courier',icon:'🚚'},{val:'Safe Express',label:'Safe Express',icon:'🚚'},{val:'Gati KWE',label:'Gati KWE',icon:'🚚'},{val:'Trackon Courier',label:'Trackon Courier',icon:'🚚'},{val:'Maruti Courier',label:'Maruti Courier',icon:'🚚'},{val:'Ecom Express',label:'Ecom Express',icon:'🚚'},{val:'Spoton Logistics',label:'Spoton Logistics',icon:'🚚'},{val:'Amazon Shipping',label:'Amazon Shipping',icon:'🚚'},{val:'Shiprocket',label:'Shiprocket',icon:'🚚'},{val:'India Post — Speed Post',label:'India Post — Speed Post',icon:'✉️'},{val:'India Post — Registered Post',label:'India Post — Registered Post',icon:'✉️'},{val:'India Post — Parcel Post',label:'India Post — Parcel Post',icon:'✉️'},{val:'India Post — Business Parcel',label:'India Post — Business Parcel',icon:'✉️'},{val:'Self Delivery',label:'Self Delivery',icon:'🏠'},{val:'Hand Delivery',label:'Hand Delivery',icon:'🏠'},{val:'Other (specify in Remarks)',label:'Other (specify in Remarks)',icon:'🏠'}];
 
   el.innerHTML=`<div class="card" style="max-width:1080px">
@@ -1750,6 +1751,18 @@ function rOE(el){
               <option value="Bookshop">🏪 Book Shop</option>
             </select>
             <div style="flex:1">${buildSdrop('ocu', custItems, {placeholder:'Search customer…', onSelect:(val)=>{}})}</div>
+          </div>
+          <!-- School Name — visible only when Bookshop is selected -->
+          <div id="oeSchoolNameRow" style="display:none;margin-top:6px">
+            ${buildSdrop('oeSchoolDrop', schoolItems, {placeholder:'🏫 Search or select school…', allowNew:true, onNew:()=>oeSchoolAddNew()})}
+            <div id="oeSchoolAddBox" style="display:none;margin-top:6px;background:#f0f6ff;border:1.5px solid #93c5fd;border-radius:8px;padding:10px">
+              <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:6px">➕ Add School Name</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input class="fc" id="oeSchoolNewName" placeholder="Type school name…" style="font-size:13px;flex:1" onkeydown="if(event.key==='Enter')oeSchoolSaveNew()">
+                <button class="btn bp bsm" onclick="oeSchoolSaveNew()">Add</button>
+                <button class="btn bo bsm" onclick="oeSchoolCancelNew()">Cancel</button>
+              </div>
+            </div>
           </div>
           <div id="oeQuickAddBox" style="display:none;margin-top:10px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:14px">
             <div style="font-size:12px;font-weight:700;color:#065f46;margin-bottom:10px">➕ Quick Add Customer</div>
@@ -1912,6 +1925,45 @@ function oeFilterCust(){
   if(hid) hid.value='';
   // Re-render the dropdown list with filtered items
   sdFilter('ocu','');
+  // Show School Name field only when Bookshop is selected
+  const row=document.getElementById('oeSchoolNameRow');
+  if(row){
+    const isBookshop=(type==='Bookshop');
+    row.style.display=isBookshop?'block':'none';
+    if(!isBookshop){
+      if(_sdropState['oeSchoolDrop']){_sdropState['oeSchoolDrop'].selected='';}
+      const si=document.getElementById('sdinp_oeSchoolDrop');
+      const sv=document.getElementById('sdval_oeSchoolDrop');
+      if(si) si.value='';
+      if(sv) sv.value='';
+      const ab=document.getElementById('oeSchoolAddBox');
+      if(ab) ab.style.display='none';
+    }
+  }
+}
+
+/* ── OE SCHOOL NAME INLINE ADD ── */
+function oeSchoolAddNew(){
+  const box=document.getElementById('oeSchoolAddBox');
+  if(box){box.style.display='block';const ni=document.getElementById('oeSchoolNewName');if(ni){ni.value='';setTimeout(()=>ni.focus(),30);}}
+}
+function oeSchoolSaveNew(){
+  const ni=document.getElementById('oeSchoolNewName');
+  const name=(ni?.value||'').trim();
+  if(!name){toast('Enter a school name','er');return;}
+  const state=_sdropState['oeSchoolDrop'];
+  if(state){
+    if(!state.items.find(x=>x.label.toLowerCase()===name.toLowerCase()))
+      state.items.push({val:name,label:name,icon:'🏫'});
+    sdSelect('oeSchoolDrop',name,name);
+  }
+  const box=document.getElementById('oeSchoolAddBox');
+  if(box) box.style.display='none';
+  toast('School "'+name+'" added','ok');
+}
+function oeSchoolCancelNew(){
+  const box=document.getElementById('oeSchoolAddBox');
+  if(box) box.style.display='none';
 }
 
 function oeTransportSync(){
@@ -2247,12 +2299,14 @@ function sOrdCore(){
   const otype=q('#ootype')?.value||'Main Order';
   const oDelDate=q('#oDelDate')?.value||'';
   const oTransport=sdVal('oTransport')||q('#oTransportCustom')?.value.trim()||'';
+  const schoolName=(sdVal('oeSchoolDrop')||'').trim();
   DB.orders.push({
     id:DB.nid.ord++, no, dt:q('#odt').value,
     ayid,cid,mid, eid:eid2,
     otype, delDate:oDelDate, transport:oTransport,
     st:'Pending', rem:q('#orem').value||'',
-    discPct:pct, det
+    discPct:pct, det,
+    ...(schoolName && {schoolName})
   });
   const newOrdId=DB.nid.ord-1;
   addLog('order_create','Created order '+no+' for '+gC(cid)?.name,{orderId:newOrdId});
@@ -2286,11 +2340,33 @@ function dOL(){}
 
 // ════ ORDERS LIST ════
 function rOrders(el){
-  el.innerHTML=`<div class="sb2"><input class="si2" id="os2" placeholder="Search order no or customer..." oninput="fOrds()"><select class="fc" id="oss" style="width:150px" onchange="fOrds()"><option value="">All Status</option><option>Pending</option><option>Dispatched</option><option>Part Dispatched</option><option>Cancelled</option></select><button class="btn ba" onclick="go('oe')">+ New Order</button><button class="btn bp bsm" onclick="oCF('School')">+ Add School</button><button class="btn bt bsm" onclick="oCF('Bookshop')">+ Add Bookshop</button><label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;margin-left:12px"><input type="checkbox" ${gShowTotalRate()?'checked':''} onchange="toggleShowTotalRate(this.checked)">Show Total Rate</label></div>
+  el.innerHTML=`<div class="sb2"><input class="si2" id="os2" placeholder="Search order no, customer, manager, executive, transport, status..." oninput="fOrds()"><select class="fc" id="oss" style="width:150px" onchange="fOrds()"><option value="">All Status</option><option>Pending</option><option>Dispatched</option><option>Part Dispatched</option><option>Cancelled</option></select><button class="btn ba" onclick="go('oe')">+ New Order</button><button class="btn bp bsm" onclick="oCF('School')">+ Add School</button><button class="btn bt bsm" onclick="oCF('Bookshop')">+ Add Bookshop</button><label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;margin-left:12px"><input type="checkbox" ${gShowTotalRate()?'checked':''} onchange="toggleShowTotalRate(this.checked)">Show Total Rate</label></div>
   <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Order No</th><th>Type</th><th>Date</th><th>Del. Date</th><th>Customer</th><th>Manager</th><th>Executive</th><th>Transport</th><th>Lines</th>${gShowTotalRate()?'<th>Total (Rate)</th>':''}<th>Status</th><th>Actions</th></tr></thead><tbody id="ort"></tbody></table></div></div>`;
   rOT(ayOrders());
 }
-function fOrds(){const s=(q('#os2')?.value||'').toLowerCase(),st=q('#oss')?.value||'';rOT(ayOrders().filter(o=>{if(st&&o.st!==st)return false;if(s&&!o.no.toLowerCase().includes(s)&&!gC(o.cid)?.name.toLowerCase().includes(s))return false;return true}))}
+function fOrds(){
+  const s=(q('#os2')?.value||'').toLowerCase();
+  const st=q('#oss')?.value||'';
+  rOT(ayOrders().filter(o=>{
+    if(st&&o.st!==st) return false;
+    if(!s) return true;
+    const c=gC(o.cid),m=gM(o.mid),e=gE(o.eid);
+    return [
+      o.no,
+      o.otype||'',
+      fd(o.dt), o.dt||'',
+      o.delDate?fd(o.delDate):'', o.delDate||'',
+      c?.name||'', c?.city||'', c?.type||'', c?.code||'',
+      m?.name||'', m?.code||'',
+      e?.name||'', e?.ter||'', e?.code||'',
+      o.transport||'',
+      String(o.det.length),
+      String(ot(o.det)),
+      o.st||'',
+      o.rem||''
+    ].some(v=>v.toLowerCase().includes(s));
+  }));
+}
 function rOT(data){
   const tb=q('#ort');if(!tb)return;
   tb.innerHTML=[...data].reverse().map(o=>`<tr>
@@ -2397,6 +2473,8 @@ function rRpts(el){
   </div>`;
   
   if(!window._rptCat) window._rptCat = 'delivery';
+  if(!window._rptCatExpanded) window._rptCatExpanded = null;
+  if(!window._rptChk) window._rptChk = {custType:[],status:[],otype:[],series:[],mgr:[]};
   renderRptSidebar();
   renderActiveReport();
 }
@@ -2420,28 +2498,136 @@ const RPT_CATEGORIES = [
 function renderRptSidebar() {
   const sb = q('#rptSidebar');
   if(!sb) return;
-  sb.innerHTML = RPT_CATEGORIES.map(cat => {
-    const isCatOn = window._rptCat === cat.id;
-    let html = `<div style="padding:8px 12px;font-size:13px;font-weight:600;color:${isCatOn?'var(--blue)':'var(--text2)'};cursor:pointer;border-radius:6px;background:${isCatOn?'#f0f6ff':'transparent'};margin-bottom:2px;display:flex;align-items:center;gap:8px;transition:all 0.2s" onclick="swRptCat('${cat.id}')" onmouseover="this.style.background='#f7fafc'" onmouseout="this.style.background='${isCatOn?'#f0f6ff':'transparent'}'">
-        <span>${cat.icon}</span> <span>${cat.title}</span>
+  if(!window._rptChk) window._rptChk={custType:[],status:[],otype:[],series:[],mgr:[]};
+  const chk=window._rptChk;
+  const totalActive=chk.custType.length+chk.status.length+chk.otype.length+chk.series.length+chk.mgr.length;
+  const cat=window._rptCat;
+
+  // ── Category navigation ──
+  let html = RPT_CATEGORIES.map(c => {
+    const on=window._rptCat===c.id;
+    const expanded = c.subs && window._rptCatExpanded===c.id;
+    let s=`<div style="padding:8px 12px;font-size:13px;font-weight:600;color:${on?'var(--blue)':'var(--text2)'};cursor:pointer;border-radius:6px;background:${on?'#f0f6ff':'transparent'};margin-bottom:2px;display:flex;align-items:center;gap:8px" onclick="swRptCat('${c.id}')">
+      <span>${c.icon}</span><span style="flex:1">${c.title}</span>
+      ${c.subs ? `<span style="color:var(--blue);font-size:10px;transition:transform .2s;display:inline-block;transform:rotate(${expanded?'0':'−90'}deg)">${expanded?'▼':'▶'}</span>` : ''}
+    </div>`;
+    if(c.subs && window._rptCatExpanded===c.id){
+      s+=`<div style="padding-left:26px;margin-bottom:6px;margin-top:2px;display:flex;flex-direction:column;gap:2px">
+        ${c.subs.map(sub=>{const so=window._rptSub===sub.id;return`<div style="padding:5px 12px;font-size:12px;color:${so?'var(--blue)':'var(--text2)'};font-weight:${so?'700':'500'};cursor:pointer;border-left:2.5px solid ${so?'var(--blue)':'transparent'};border-radius:0 4px 4px 0;background:${so?'#f7fafc':'transparent'}" onclick="swRptSub('${sub.id}')">${sub.title}</div>`;}).join('')}
       </div>`;
-    if(cat.subs && isCatOn) {
-       html += `<div style="padding-left:26px;margin-bottom:8px;margin-top:4px;display:flex;flex-direction:column;gap:3px">
-         ${cat.subs.map(sub => {
-            const isSubOn = window._rptSub === sub.id;
-            return `<div style="padding:5px 12px;font-size:12px;color:${isSubOn?'var(--blue)':'var(--text2)'};font-weight:${isSubOn?'700':'500'};cursor:pointer;border-left:2.5px solid ${isSubOn?'var(--blue)':'transparent'};border-radius:0 4px 4px 0;background:${isSubOn?'#f7fafc':'transparent'}" onclick="swRptSub('${sub.id}')">${sub.title}</div>`;
-         }).join('')}
-       </div>`;
     }
-    return html;
+    return s;
   }).join('');
+
+  // ── Filters section ──
+  html+=`<div style="border-top:1.5px solid var(--border);margin:8px 0 6px"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 8px 6px">
+    <span style="font-size:10.5px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.07em">🔧 Filters</span>
+    ${totalActive?`<button onclick="rptClearChk()" style="font-size:10px;background:#fee2e2;color:#991b1b;border:none;border-radius:10px;padding:2px 8px;cursor:pointer;font-weight:700">✕ Clear ${totalActive}</button>`:'<span style="font-size:10px;color:var(--text3)">None active</span>'}
+  </div>`;
+
+  // Helper — count orders matching a predicate
+  const co=fn=>(DB.orders||[]).filter(o=>o.ayid===gAY().id&&fn(o)).length;
+  const showStatus=cat==='delivery'||cat==='due'||cat==='overallDue'||cat==='consolidated';
+  const showSeries=cat==='delivery'||cat==='due'||cat==='overallDue'||cat==='consolidated';
+
+  // 1. Customer Type
+  html+=_rptChkGroup('custType','Customer Type',[
+    {val:'School',   label:'🏫 School',    cnt:co(o=>gC(o.cid)?.type==='School')},
+    {val:'Bookshop', label:'🏪 Book Shop', cnt:co(o=>gC(o.cid)?.type==='Bookshop')}
+  ]);
+
+  // 2. Order Status
+  if(showStatus) html+=_rptChkGroup('status','Order Status',[
+    {val:'Pending',         label:'🟡 Pending',          cnt:co(o=>o.st==='Pending')},
+    {val:'Dispatched',      label:'🟢 Dispatched',        cnt:co(o=>o.st==='Dispatched')},
+    {val:'Part Dispatched', label:'🔵 Part Dispatched',   cnt:co(o=>o.st==='Part Dispatched')}
+  ]);
+
+  // 3. Order Type
+  html+=_rptChkGroup('otype','Order Type',[
+    {val:'Main Order', label:'📋 Main Order', cnt:co(o=>o.otype==='Main Order')},
+    {val:'AO Order',   label:'📄 AO Order',   cnt:co(o=>o.otype==='AO Order')}
+  ]);
+
+  // 4. Book Series
+  if(showSeries){
+    const serOpts=DB.series.filter(s=>s.act).map(s=>({
+      val:s.id, label:s.shortName||s.name,
+      cnt:co(o=>o.det.some(d=>d.sid===s.id))
+    }));
+    html+=_rptChkGroup('series','Book Series',serOpts);
+  }
+
+  // 5. Manager
+  const mgrOpts=DB.mgr.filter(m=>m.act).map(m=>({
+    val:m.id, label:'👤 '+m.name, cnt:co(o=>o.mid===m.id)
+  }));
+  html+=_rptChkGroup('mgr','Manager',mgrOpts);
+
+  sb.innerHTML=html;
+}
+
+function _rptChkGroup(key, title, items){
+  if(!window._rptChk) window._rptChk={custType:[],status:[],otype:[],series:[],mgr:[]};
+  const sel=window._rptChk[key]||[];
+  const open=window['_rptGrp_'+key]!==false;
+  const activeCount=sel.length;
+  let h=`<div style="margin-bottom:4px;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:6px;padding:7px 10px;background:#f7fafc;cursor:pointer;user-select:none" onclick="rptToggleGrp('${key}')">
+      <span style="font-size:9px;color:var(--text3);transition:transform .2s;display:inline-block;transform:rotate(${open?'0':'−90'}deg)">▼</span>
+      <span style="flex:1;font-size:11.5px;font-weight:700;color:var(--navy)">${title}</span>
+      ${activeCount?`<span style="background:var(--blue);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700">${activeCount}</span>`:''}
+    </div>`;
+  if(open){
+    h+=`<div style="padding:4px 8px 6px">`;
+    items.forEach(item=>{
+      const v=String(item.val);
+      const checked=sel.map(String).includes(v);
+      h+=`<label style="display:flex;align-items:center;gap:8px;padding:4px 4px;cursor:pointer;border-radius:5px" onmouseover="this.style.background='#f0f6ff'" onmouseout="this.style.background='transparent'">
+        <input type="checkbox" ${checked?'checked':''} onchange="rptToggleChk('${key}','${v}')" style="width:14px;height:14px;accent-color:var(--blue);cursor:pointer;flex-shrink:0">
+        <span style="flex:1;font-size:12px;color:var(--text)">${item.label}</span>
+        <span style="font-size:10px;background:${checked?'#dbeafe':'#f0f4f8'};color:${checked?'var(--blue)':'var(--text3)'};border-radius:8px;padding:1px 7px;font-weight:600">${item.cnt}</span>
+      </label>`;
+    });
+    h+=`</div>`;
+  }
+  h+=`</div>`;
+  return h;
+}
+
+function rptToggleGrp(key){
+  window['_rptGrp_'+key]=window['_rptGrp_'+key]===false?true:false;
+  renderRptSidebar();
+}
+function rptToggleChk(key,val){
+  if(!window._rptChk) window._rptChk={custType:[],status:[],otype:[],series:[],mgr:[]};
+  const arr=window._rptChk[key];
+  const v=(key==='series'||key==='mgr')?parseInt(val):val;
+  const idx=arr.map(String).indexOf(String(v));
+  if(idx===-1) arr.push(v); else arr.splice(idx,1);
+  renderActiveReport();
+  renderRptSidebar();
+}
+function rptClearChk(){
+  window._rptChk={custType:[],status:[],otype:[],series:[],mgr:[]};
+  renderActiveReport();
+  renderRptSidebar();
 }
 
 function swRptCat(id) {
-  window._rptCat = id;
   const cat = RPT_CATEGORIES.find(c=>c.id===id);
+  if(window._rptCat === id && cat.subs) {
+    // Same category clicked — toggle sub-items open/closed
+    window._rptCatExpanded = (window._rptCatExpanded === id) ? null : id;
+    renderRptSidebar();
+    return;
+  }
+  window._rptCat = id;
+  window._rptCatExpanded = cat.subs ? id : null;
   window._rptSub = cat.subs ? cat.subs[0].id : '';
   window._rptSearch='';window._rptFilterState='';window._rptFilterExec='';window._rptDateFrom='';window._rptDateTo='';window._rptGroupType='Executive Wise';window._rptDiscount='';
+  window._rptChk={custType:[],status:[],otype:[],series:[],mgr:[]};
   renderRptSidebar();
   renderActiveReport();
 }
@@ -2531,6 +2717,13 @@ function _ordPassFilter(o) {
      const s = window._rptSearch.toLowerCase();
      if(![o.no, c.name, c.city, sn(c.state)].some(v=>v.toLowerCase().includes(s))) return false;
    }
+   // Checkbox filters
+   const chk=window._rptChk||{};
+   if(chk.custType?.length && !chk.custType.includes(c.type)) return false;
+   if(chk.status?.length && !chk.status.includes(o.st)) return false;
+   if(chk.otype?.length && !chk.otype.includes(o.otype)) return false;
+   if(chk.series?.length && !o.det.some(d=>chk.series.includes(d.sid))) return false;
+   if(chk.mgr?.length && !chk.mgr.map(String).includes(String(o.mid))) return false;
    return true;
 }
 
@@ -6687,6 +6880,19 @@ function printChallanManual({chNo,chDate,c,ay,transport,vehicle,delDate,rem,item
    automatic IndexedDB offline persistence. Falls back to
    localStorage if Firebase SDK fails to load.
    Firebase project: samsel-app-92b36
+
+   REQUIRED — Firestore Security Rules (Firebase Console → Firestore → Rules):
+   ─────────────────────────────────────────────────────────────────────────────
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /ers_data/{document} {
+         allow read, write: if true;
+       }
+     }
+   }
+   ─────────────────────────────────────────────────────────────────────────────
+   Without these rules, all reads/writes will be denied after the trial period.
 ══════════════════════════════════════════════════════ */
 const SAMSEL_SERVER = (function(){
   let _connected = false;
@@ -6733,18 +6939,25 @@ const SAMSEL_SERVER = (function(){
       _useFirebase = true;
       console.log('[DB] Firebase connected (project: samsel-app-92b36)');
 
-      // Listen to real-time connection state
-      db.collection('ers_data').doc('__ping__').onSnapshot(
+      // Ensure the __ping__ document exists so the connection listener works reliably
+      const pingRef = db.collection('ers_data').doc('__ping__');
+      pingRef.set({ ts: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+        .catch(() => {}); // ignore — may fail offline, that's fine
+
+      // Listen to real-time connection state via __ping__ metadata
+      pingRef.onSnapshot(
         { includeMetadataChanges: true },
         snap => {
           const wasOffline = !_connected;
           _connected = !snap.metadata.fromCache && navigator.onLine;
           if (wasOffline && _connected) {
-            showStatus('connected');
-            console.log('[DB] Back online — Firestore will flush queued writes');
+            showStatus('syncing');
+            console.log('[DB] Back online — syncing queued writes to Firestore');
+            // Push latest local state to cloud after reconnect
+            setTimeout(() => saveDB(DB), 1500);
           }
         },
-        () => { _connected = false; }
+        () => { _connected = false; showStatus('offline'); }
       );
 
       return true;
@@ -6842,15 +7055,18 @@ const SAMSEL_SERVER = (function(){
     const el = document.getElementById('syncStatus');
     if (!el) return;
     const map = {
-      connected: ['Connected',  '#10b981'],
-      saving:    ['Saving...',  '#f59e0b'],
-      saved:     ['Saved ✓',    '#10b981'],
-      offline:   ['Offline',    '#f59e0b'],
-      error:     ['Save Error', '#ef4444'],
+      connected:   ['🟢 Online',         '#065f46','#d1fae5'],
+      saving:      ['⏳ Saving...',       '#92400e','#fef3c7'],
+      saved:       ['✅ Saved',           '#065f46','#d1fae5'],
+      offline:     ['🔴 Offline Mode',    '#991b1b','#fee2e2'],
+      error:       ['⚠️ Save Error',      '#991b1b','#fee2e2'],
+      connecting:  ['⏳ Connecting...',   '#1e40af','#dbeafe'],
+      syncing:     ['🔄 Syncing...',      '#1e40af','#dbeafe'],
     };
-    const [text, color] = map[state] || ['', '#999'];
+    const [text, color, bg] = map[state] || ['', '#666','#f3f4f6'];
     el.textContent = text;
-    el.style.color  = color;
+    el.style.color      = color;
+    el.style.background = bg;
   }
 
   return { initFirebase, loadDB, saveDB, scheduleSave, isConnected: () => _connected, showStatus };
@@ -6871,10 +7087,20 @@ const SAMSEL_SERVER = (function(){
   Array.prototype.splice = function(...args){
     const r=_splice.apply(this,args); if(isDBArr(this)) SAMSEL_SERVER.scheduleSave(); return r;
   };
+  // Only trigger save when Object.assign targets a DB collection item or DB itself
+  function isDBObj(t){
+    try{
+      if(t===DB||t===DB.settings||t===DB.nid) return true;
+      return DB.orders.includes(t)||DB.cust.includes(t)||DB.series.includes(t)||
+             DB.mgr.includes(t)||DB.exe.includes(t)||DB.stock.includes(t)||
+             DB.challans.includes(t)||DB.users.includes(t)||DB.quots.includes(t)||
+             DB.suppliers.includes(t)||DB.ay.includes(t);
+    }catch{return false;}
+  }
   const _assign = Object.assign;
   Object.assign = function(t,...s){
     const r=_assign(t,...s);
-    try{ if(typeof DB!=='undefined') SAMSEL_SERVER.scheduleSave(); }catch{}
+    try{ if(typeof DB!=='undefined' && isDBObj(t)) SAMSEL_SERVER.scheduleSave(); }catch{}
     return r;
   };
 })();
@@ -6886,8 +7112,8 @@ window.addEventListener('DOMContentLoaded', async function(){
   if (tb) {
     const ind = document.createElement('span');
     ind.id = 'syncStatus';
-    ind.style.cssText = 'font-size:11px;font-weight:600;padding:3px 10px;border-radius:8px;background:rgba(255,255,255,.12);margin-left:8px;min-width:60px;display:inline-block;text-align:center';
-    ind.textContent = 'Connecting...';
+    ind.style.cssText = 'font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;margin-left:8px;min-width:80px;display:inline-block;text-align:center;transition:all .3s;white-space:nowrap;background:#dbeafe;color:#1e40af';
+    ind.textContent = '⏳ Connecting...';
     tb.appendChild(ind);
   }
 
@@ -6912,9 +7138,28 @@ window.addEventListener('DOMContentLoaded', async function(){
     SAMSEL_SERVER.showStatus('error');
   }
 
-  // Step 3: Reflect online/offline changes in the status badge
-  window.addEventListener('online',  () => { SAMSEL_SERVER.showStatus('connected'); });
-  window.addEventListener('offline', () => { SAMSEL_SERVER.showStatus('offline');   });
+  // Step 3: React to browser online/offline transitions
+  window.addEventListener('online', async () => {
+    console.log('[DB] Browser went online — attempting Firebase reconnect');
+    SAMSEL_SERVER.showStatus('syncing');
+    // If Firebase was never initialised (page loaded offline), try now
+    if (!SAMSEL_SERVER.isConnected()) {
+      await SAMSEL_SERVER.initFirebase();
+      try {
+        const saved = await SAMSEL_SERVER.loadDB();
+        if (saved) {
+          Object.keys(saved).forEach(k => { if (typeof saved[k] !== 'undefined') DB[k] = saved[k]; });
+          if (Array.isArray(saved.CLS)) { CLS.length = 0; saved.CLS.forEach(c => CLS.push(c)); }
+          console.log('[DB] Re-synced from Firestore after coming online');
+        }
+      } catch(e) { console.warn('[DB] Re-sync error:', e); }
+    }
+    SAMSEL_SERVER.showStatus(SAMSEL_SERVER.isConnected() ? 'connected' : 'offline');
+  });
+  window.addEventListener('offline', () => {
+    console.log('[DB] Browser went offline');
+    SAMSEL_SERVER.showStatus('offline');
+  });
 });
 
 </script>

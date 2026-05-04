@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python deploy_rules.py)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('visibility:', d.get\\('visibility'\\), '| private:', d.get\\('private'\\)\\)\")"
+    ]
+  }
+}
